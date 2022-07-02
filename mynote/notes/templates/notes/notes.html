@@ -1,0 +1,189 @@
+<div class="container notes_items">
+    <div class="row" id="n">
+        {% for i in n %}
+        <form class="col-lg-12 note_plus" id="notes_plus{{forloop.counter}}" title="click here to edit..." data-bs-toggle="modal" data-bs-target="#exampleModal" data-dbid="{{i.id}}" data-dbnt="{{i.note}}" data-dbtc="{{i.time_created}}" data-dbtu="{{i.time_updated}}" data-img="{% if i.image %}{{i.image.url}}{% endif %}">
+          <div class="container">
+          <div class="row">
+            <div class="col-lg-1">
+              {{forloop.counter}}
+              </div>
+              <div class="col-lg-3">
+       {% if i.note|length > 20 %}
+            <p id="note_txt{{forloop.counter}}" data-dbnote="{{i.note}}">{{i.note|truncatechars:20}} <b> more</b></p>
+        {% else %}
+        <p id="note_txt{{forloop.counter}}" data-dbnote="{{i.note}}">{{i.note}}</p>
+        {% endif %}
+            </div>
+            <div class="col-lg-2">
+              {% if i.image %}
+              <img src="{{i.image.url}}" alt="" style="width: 50px;height:50px;">
+              {% endif %}
+            </div>
+            <div class="col-lg-3">
+            <p id="time_created1">Time Created: {{i.time_created}}</p>
+            </div>
+            <div class="col-lg-3">
+
+            <p id="time_updated1">Time Updated: {{i.time_updated}}</p>
+            </div>
+            </div>
+        </div>
+        </form>
+        {% endfor %}
+    </div>
+</div>
+
+
+ 
+<!-- Button trigger modal -->
+
+  
+  <!-- Modal -->
+  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Edit Notes</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form action="" method="post" enctype="multipart/form-data">
+        <div class="modal-body">
+          <textarea name="note_modal" id="note_txt" cols="60" rows="4" required></textarea><hr>
+          <!-- {{nf.note}} -->
+          <img src="" alt="" id="id_note_img" name="current_image"><br>
+          <!-- {{nf.image}} -->
+          <input type="file" name="file_modal" id="new_image"> 
+          <input type="hidden" name="user_name_id">
+          <input type="hidden" name="notes_id">
+
+          <p id="time_created"></p>
+          <p id="time_updated"></p>
+
+
+        </div>
+        <div class="modal-footer">
+            <input type="submit" class="btn btn-danger" id="id_delete" value="Delete"/>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <input type="submit" class="btn btn-primary" id="save" value="Save changes"/>
+        </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script>
+  
+        var arr=[];
+        var j=0
+        $('.note_plus').each(function(i,obj){
+          // console.log(obj.id)
+          arr[j++]=obj.id
+
+        
+        });
+        
+        // alert(`${arr}`);
+        // let nc=$('#time_created1').val()
+        // let nu=$('#note_updated1').val()
+        for (var k=0;k<arr.length;k++){
+          
+            $(`#${arr[k]}`).click(function(){
+              var nid=$(this).data('dbid')
+              var ntxt=$(this).data('dbnt')
+              var nimg=$(this).data('img')
+              var ntc=$(this).data('dbtc')
+              var ntu=$(this).data('dbtu')
+              var ths=$(this)
+              $('#id_delete').click(function(e){
+                e.preventDefault();
+                // console.log(nid);
+                let csr=$('input[name="csrfmiddlewaretoken"]').val();
+                mydata={id:nid,csrfmiddlewaretoken:csr}
+                $.ajax({
+                  url:"{% url 'delete' %}",
+                  method:"POST",
+                  data:mydata,
+                  success:function(data){
+                    if(data.status==1){
+                      $("#exampleModal").modal('hide');
+                      // $(ths).hide();
+                      $(ths).fadeOut();
+                    }
+                  }
+
+                })
+
+              })
+              var new_image=document.getElementById('new_image')
+              var new_img_view=document.getElementById('id_note_img')
+
+              const url="";
+              new_image.addEventListener('change',()=>{
+                const img_data=new_image.files[0];
+                const url=URL.createObjectURL(img_data);
+                console.log(url);
+                $('#id_note_img').attr('src',url)
+              })
+              $('#save').click(function(e){
+                e.preventDefault();
+
+                var formdata=new FormData();
+                let csr=$('input[name="csrfmiddlewaretoken"]').val();
+                console.log(csr);
+                let utxt=$('textarea#note_txt').val();
+                console.log(utxt);
+                console.log(nid);
+                formdata.append("user_name_id","{{request.user.id}}")
+                formdata.append("note_modal",utxt)
+                formdata.append("file_modal",new_image.files[0])
+                formdata.append("csrfmiddlewaretoken",csr)
+                formdata.append("notes_id",nid)
+                formdata.append("current_image",nimg)
+                
+                $.ajax({
+                  type:"POST",
+                  url:"{% url 'edit' %}",
+                  enctype:'multipart/form-data',
+                  data:formdata,
+                  cache:false,
+                  contentType:false,
+                  processData:false,
+                  success:function(data){
+                      window.location="{% url 'home' %}"
+                      console.log(data)
+                      // $(ths).text(data.note);
+                    },
+                  error:function(error){
+                    console.log(error)
+                  }   
+                    
+                  })
+                
+
+
+              })
+
+              $('#note_txt').text(ntxt)
+              $('#id_note_img').attr('src',nimg)
+              $('#time_created').html("<pre>"+'Time Created'+":     "+"<b>"+ntc+"</b>"+"</pre>")
+              $('#time_updated').html("<pre>"+'Time updated'+":     "+"<b>"+ntu+"</b>"+"</pre>")
+              // alert(nid)
+              // alert(ntxt)
+              
+            })
+            
+        
+        }
+
+        
+       
+        
+    
+    
+
+
+
+   
+   </script>
+  
+
+  

@@ -1,0 +1,225 @@
+{% if messages %}
+
+{% for m in messages %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+  <strong>success!</strong> {{m}}.
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+   
+  {% endfor %}
+{% endif %}
+<form class="add_note_btn container p-3 bg-light" id="ajax_call_submit" enctype="multipart/form-data" method="post">
+  {% csrf_token %}
+  {% if nf.non_field_errors %}
+  {% for error in nf.non_field_errors %}
+  {{error}}
+  {% endfor %}
+  {% endif %}
+  <!-- <textarea name="" id="note_text" cols="50" rows="3" style="padding: 0 15px;outline:none;border: none;color: rgb(29, 26, 194);"></textarea> -->
+  {{nf.note}} <br>{{nf.note.errors|striptags}}
+  <div id="note_img_preview">
+  
+  </div>
+  {{nf.image}} <br>{{nf.image.errors|striptags}}
+  {{nf.user}} {{nf.user.errors|striptags}}
+
+
+  <!-- <input type="hidden" name="user" value="{{request.user.id}}" id="user_id"> -->
+  <button class="btn btn-info w-100" type="submit" id="addnote_btn">Create note</button>
+
+</form>
+<script>
+  var note=document.getElementById('id_note');
+  var image=document.getElementById('id_image');
+  var form=document.getElementById('ajax_call_submit');
+  var user=document.getElementById('id_user')
+  var img_view=document.getElementById('note_img_preview')
+  
+
+  var csrf=document.getElementsByName('csrfmiddlewaretoken');
+
+  const url="";
+  image.addEventListener('change',()=>{
+    const img_data=image.files[0];
+    const url=URL.createObjectURL(img_data);
+    console.log(url);
+    img_view.innerHTML=`<img src=${url} alt="" style="width:100%;height:50vh;"/>`
+  })
+
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    
+    var fd=new FormData();
+    fd.append('csrfmiddlewaretoken',csrf[0].value);
+    fd.append('note',note.value);
+    fd.append('image',image.files[0]);
+    fd.append('user',"{{request.user.id}}")
+    console.log(fd)
+    $.ajax({
+      type:"POST",
+      url:"{% url 'add_note' %}",
+      enctype:'multipart/form-data',
+      data:fd,
+      cache:false,
+      contentType:false,
+      processData:false,
+      success:function(response){
+        console.log("success")
+        console.log(response)
+        window.location="{% url 'home' %}"
+      },
+      error:function(error){
+        console.log("error")
+      },
+      
+
+
+    })
+  })
+
+  // $('#ajax_call_submit').submit(function(e) {
+  //   e.preventDefault();
+    // var form_data = new FormData();
+    // form_data.append("image", document.getElementById('id_image').files[0]);
+    // let csr = $('input[name="csrfmiddlewaretoken"]').val();
+    // var ntxt = $('#id_note').val();
+    // console.log(ntxt);
+    // var user = $('#user_id').val();
+    // var imgurl = $('#id_image').val();
+
+    // form_data.append("note", ntxt);
+    // form_data.append("csrfmiddlewaretoken", csr);
+    // form_data.append('image', imgurl)
+
+
+
+    // console.log(imgurl);
+    // console.log(user);
+    // mydata={note:ntxt,user:user,csrfmiddlewaretoken:csr,image:imgurl};
+    // output = "";
+    // $.ajax({
+      // url: "{% url 'add_note' %}",
+      // method: "POST",
+      // enctype: 'multipart/form-data',
+      // data: mydata,
+
+      // dataType: "json",
+      // success: function (data) {
+        // console.log(data);
+        // if (data.status === 'saved') {
+        //   x = data.data;
+
+        //   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        //   // console.log(x[0]);
+          // for (let i = 0; i < x.length; i++) {
+          //   var date1 = new Date(x[i]['time_created']);
+          //   var date1_month = monthNames[date1.getMonth()];
+          //   var date1_date = date1.getDate();
+          //   var date1_fullyear = date1.getFullYear();
+          //   var date1_hours = date1.getHours();
+          //   var date1_minutes = date1.getMinutes();
+          //   var date1_am_or_pm = date1_hours > 12 ? 'p.m.' : 'a.m.';
+          //   var hours1 = (date1_hours % 12) || 12;
+
+          //   var date2 = new Date(x[i]['time_updated']);
+          //   var date2_month = monthNames[date2.getMonth()];
+          //   var date2_date = date2.getDate();
+          //   var date2_fullyear = date2.getFullYear();
+          //   var date2_hours = date2.getHours();
+          //   var date2_minutes = date2.getMinutes();
+          //   var date2_am_or_pm = date2_hours > 12 ? 'p.m.' : 'a.m.';
+          //   var hours2 = (date2_hours % 12) || 12;
+
+
+
+
+        //     output += `<form class="col-lg-12 note_plus" id="notes_plus${i + 1}" title="click here to edit..." data-bs-toggle="modal" data-bs-target="#exampleModal" data-dbid="${x[i]['id']}" data-dbnt="${x[i]['note']}" data-dbtc="${date1_month} ${date1_date}, ${date1_fullyear}, ${hours1}:${date1_minutes} ${date1_am_or_pm}" data-dbtu="${date2_month} ${date2_date}, ${date2_fullyear}, ${hours2}:${date2_minutes} ${date2_am_or_pm}">
+        //   <div class="container">
+        //   <div class="row">
+        //     <div class="col-lg-1">
+        //      ${i + 1}
+        //       </div>
+        //       <div class="col-lg-5">
+      
+        //     <p id="note_txt${i + 1}" data-dbnote="${x[i]['note']}">${x[i]['note'].slice(0, 50)}</p>
+     
+        //     </div>
+        //     <div class="col-lg-3">
+        //     <p id="time_created1">Time Created: ${date1_month} ${date1_date}, ${date1_fullyear}, ${hours1}:${date1_minutes} ${date1_am_or_pm}</p>
+        //     </div>
+        //     <div class="col-lg-3">
+
+        //     <p id="time_updated1">Time Updated: ${date2_month} ${date2_date}, ${date2_fullyear}, ${hours2}:${date2_minutes} ${date2_am_or_pm}</p>
+        //     </div>
+        //     </div>
+        // </div>
+        // </form>`
+            // console.log(x[i]['note']);
+
+
+          // }
+
+          // $('#n').html(output);
+          // var arr = [];
+          // var j = 0
+          // $('.note_plus').each(function (i, obj) {
+          //   // console.log(obj.id)
+          //   arr[j++] = obj.id
+
+
+          // });
+          // alert(`${arr}`);
+          // let nc=$('#time_created1').val()
+          // let nu=$('#note_updated1').val()
+          // for (var k = 0; k < arr.length; k++) {
+
+          //   $(`#${arr[k]}`).click(function () {
+          //     let nid = $(this).data('dbid')
+          //     let ntxt = $(this).data('dbnt')
+          //     let ntc = $(this).data('dbtc')
+          //     let ntu = $(this).data('dbtu')
+          //     let ths = $(this)
+              // $('#id_delete').click(function (e) {
+              //   e.preventDefault();
+              //   // console.log(nid);
+              //   let csr = $('input[name="csrfmiddlewaretoken"]').val();
+              //   mydata = { id: nid, csrfmiddlewaretoken: csr }
+              //   $.ajax({
+              //     url: "{% url 'delete' %}",
+              //     method: "POST",
+              //     data: mydata,
+              //     success: function (data) {
+              //       if (data.status == 1) {
+              //         $("#exampleModal").modal('hide');
+              //         $(ths).fadeOut();
+              //       }
+              //     }
+
+          //       })
+          //     })
+
+          //     $('#note_txt').text(ntxt)
+          //     $('#time_created').html("<pre>" + 'Time Created' + ":     " + "<b>" + ntc + "</b>" + "</pre>")
+          //     $('#time_updated').html("<pre>" + 'Time updated' + ":     " + "<b>" + ntu + "</b>" + "</pre>")
+          //     // alert(nid)
+          //     // alert(ntxt)
+
+          //   })
+
+          // }
+
+      //     $('#id_note').val('');
+      //   }
+      // },
+     
+    // })
+    
+  // }
+
+// });
+
+
+  // });
+  
+  
+</script>
